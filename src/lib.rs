@@ -25,17 +25,12 @@ pub struct Params<T: Serialize>(pub T);
 
 /// API Key container
 /// 
-/// Store api key and output it in several formats: query string, http header, cookie
-/// 
 /// # Examples
 /// 
 /// ```
 /// let api_key = jsonrpc_v2_client::ApiKey::new("API-KEY", "abcdef12345");
 /// println!("{}", api_key.as_header());
 /// // API-KEY: abcdef12345
-/// 
-/// println!("{}", api_key.as_query_str());
-/// // API-KEY=abcdef12345
 /// ```
 #[derive(Debug, Serialize)]
 pub struct ApiKey(String, String);
@@ -44,16 +39,8 @@ impl ApiKey {
         ApiKey(key.to_string(), value.to_string())
     }
 
-    pub fn as_query_str(&self) -> String {
-        format!("{}={}", self.0, self.1)
-    }
-
     pub fn as_header(&self) -> String {
         format!("{}: {}", self.0, self.1)
-    }
-
-    pub fn as_cookie(&self) -> String {
-        format!("Cookie: {}={}", self.0, self.1)
     }
 }
 
@@ -69,7 +56,7 @@ impl ApiKey {
 /// let params = jsonrpc_v2_client::Params([10.5, 20.5]);
 /// let id = 0;
 /// let request = jsonrpc_v2_client::Request::new(method, params, id);
-/// let response = request.send(math_service_url).unwrap();
+/// let response = request.send(math_service_url, None).unwrap();
 /// println!("{}", response);
 /// ```
 #[derive(Debug, Serialize)]
@@ -88,15 +75,27 @@ impl<T: Serialize> Request<T> {
             id: id,
         }
     }
-    pub fn send(self, url: &str) -> std::result::Result<std::string::String, std::io::Error> {
+    pub fn send(self, url: &str, api_key: Option<ApiKey>) -> std::result::Result<std::string::String, std::io::Error> {
         task::block_on(async {
             let mut client = TcpStream::connect(url).await.unwrap();
-            client.write_all(
-                format!(
-                    "POST / HTTP/1.1\r\nContent-Type: application/json\r\nUser-Agent: jsonrpc_v2_client\r\n\n{}",
-                    serde_json::to_string(&self).unwrap()
-                ).as_bytes()
-            ).await?;
+            let request: String;
+
+            match api_key {
+                Some(key_value) => {
+                    request = format!(
+                        "POST / HTTP/1.1\r\nContent-Type: application/json\r\nUser-Agent: jsonrpc_v2_client\r\n{}\r\n\n{}",
+                        key_value.as_header(),
+                        serde_json::to_string(&self).unwrap()
+                    );
+                },
+                None => {
+                    request = format!(
+                        "POST / HTTP/1.1\r\nContent-Type: application/json\r\nUser-Agent: jsonrpc_v2_client\r\n\n{}",
+                        serde_json::to_string(&self).unwrap()
+                    );
+                }
+            }
+            client.write_all(request.as_bytes()).await?;
 
             let mut buffer = [0u8; 4 * 1024];
             let buffer_size = client.read(&mut buffer).await.unwrap();

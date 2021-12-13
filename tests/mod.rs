@@ -21,10 +21,7 @@ mod tests {
 		use jsonrpc_v2_client::ApiKey;
 
 		let api_key = ApiKey::new("API_KEY", "my-api-key.xxx.yyy.zzz");
-
-		assert_eq!(api_key.as_query_str(), "API_KEY=my-api-key.xxx.yyy.zzz");
 		assert_eq!(api_key.as_header(), "API_KEY: my-api-key.xxx.yyy.zzz");
-		assert_eq!(api_key.as_cookie(), "Cookie: API_KEY=my-api-key.xxx.yyy.zzz");
 	}
 
 }
