@@ -13,7 +13,7 @@ pub const JSONRPC_VERSION: &str = "2.0";
 /// 
 /// # Examples
 /// 
-/// ``` no_run
+/// ```
 /// let str_params = jsonrpc_v2_client::Params("hello");
 /// let f32_params = jsonrpc_v2_client::Params(3.14);
 /// let u32_params = jsonrpc_v2_client::Params(1024);
@@ -29,19 +29,19 @@ pub struct Params<T: Serialize>(pub T);
 /// 
 /// # Examples
 /// 
-/// ``` no_run
-/// let api_key = ApiKey::new("API-KEY", "abcdef12345")
-/// println1!("{}", api_key.as_header());
+/// ```
+/// let api_key = jsonrpc_v2_client::ApiKey::new("API-KEY", "abcdef12345");
+/// println!("{}", api_key.as_header());
 /// // API-KEY: abcdef12345
 /// 
-/// println1!("{}", api_key.as_query_str());
+/// println!("{}", api_key.as_query_str());
 /// // API-KEY=abcdef12345
 /// ```
 #[derive(Debug, Serialize)]
 pub struct ApiKey(String, String);
 impl ApiKey {
-    pub fn new(key: String, value: String) -> ApiKey {
-        ApiKey(key, value)
+    pub fn new(key: &str, value: &str) -> ApiKey {
+        ApiKey(key.to_string(), value.to_string())
     }
 
     pub fn as_query_str(&self) -> String {
@@ -69,7 +69,8 @@ impl ApiKey {
 /// let params = jsonrpc_v2_client::Params([10.5, 20.5]);
 /// let id = 0;
 /// let request = jsonrpc_v2_client::Request::new(method, params, id);
-/// let response = request.send(math_service_url).await
+/// let response = request.send(math_service_url).unwrap();
+/// println!("{}", response);
 /// ```
 #[derive(Debug, Serialize)]
 pub struct Request<T: Serialize> {
