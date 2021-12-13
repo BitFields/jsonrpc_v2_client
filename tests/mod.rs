@@ -18,9 +18,9 @@ mod tests {
 
 	#[test]
 	fn test_api_key() {
-		use jsonrpc_v2_client::ApiKey;
+		use jsonrpc_v2_client::APIKey;
 
-		let api_key = ApiKey::new("API_KEY", "my-api-key.xxx.yyy.zzz");
+		let api_key = APIKey::new("API_KEY", "my-api-key.xxx.yyy.zzz");
 		assert_eq!(api_key.as_header(), "API_KEY: my-api-key.xxx.yyy.zzz");
 	}
 

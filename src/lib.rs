@@ -20,7 +20,7 @@ pub const JSONRPC_VERSION: &str = "2.0";
 /// let str_list_params = jsonrpc_v2_client::Params(["hello", "world"]);
 /// let u32_list_params = jsonrpc_v2_client::Params([120_000, 20_000]);
 /// ```
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Params<T: Serialize>(pub T);
 
 /// API Key container
@@ -28,15 +28,15 @@ pub struct Params<T: Serialize>(pub T);
 /// # Examples
 /// 
 /// ```
-/// let api_key = jsonrpc_v2_client::ApiKey::new("API-KEY", "abcdef12345");
+/// let api_key = jsonrpc_v2_client::APIKey::new("API-KEY", "abcdef12345");
 /// println!("{}", api_key.as_header());
 /// // API-KEY: abcdef12345
 /// ```
 #[derive(Debug, Serialize)]
-pub struct ApiKey(String, String);
-impl ApiKey {
-    pub fn new(key: &str, value: &str) -> ApiKey {
-        ApiKey(key.to_string(), value.to_string())
+pub struct APIKey(String, String);
+impl APIKey {
+    pub fn new(key: &str, value: &str) -> APIKey {
+        APIKey(key.to_string(), value.to_string())
     }
 
     pub fn as_header(&self) -> String {
@@ -46,7 +46,7 @@ impl ApiKey {
 
 /// JSON RPC Request
 /// 
-/// Contains request data and is able to send a remote call
+/// Request object
 /// 
 /// # Examples
 /// 
@@ -58,8 +58,12 @@ impl ApiKey {
 /// let request = jsonrpc_v2_client::Request::new(method, params, id);
 /// let response = request.send(math_service_url, None).unwrap();
 /// println!("{}", response);
+/// // Or with API KEY
+/// let api_key = jsonrpc_v2_client::APIKey::new("API-KEY", "abcdef123456");
+/// let response = request.send(math_service_url, Some(api_key)).unwrap();
+/// println!("{}", response);
 /// ```
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Request<T: Serialize> {
     jsonrpc: String,
     pub method: String,
@@ -75,7 +79,7 @@ impl<T: Serialize> Request<T> {
             id: id,
         }
     }
-    pub fn send(self, url: &str, api_key: Option<ApiKey>) -> std::result::Result<std::string::String, std::io::Error> {
+    pub fn send(&self, url: &str, api_key: Option<APIKey>) -> std::result::Result<std::string::String, std::io::Error> {
         task::block_on(async {
             let mut client = TcpStream::connect(url).await.unwrap();
             let request: String;
