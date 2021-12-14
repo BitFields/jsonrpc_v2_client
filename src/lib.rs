@@ -4,15 +4,16 @@ use async_std::task;
 use serde::Serialize;
 
 
+
 /// version of protocol
 pub const JSONRPC_VERSION: &str = "2.0";
 
 /// Request parameters
-/// 
+///
 /// Enable sending of serializable parameters with request
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// let str_params = jsonrpc_v2_client::Params("hello");
 /// let f32_params = jsonrpc_v2_client::Params(3.14);
@@ -24,9 +25,9 @@ pub const JSONRPC_VERSION: &str = "2.0";
 pub struct Params<T: Serialize>(pub T);
 
 /// API Key container
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// let api_key = jsonrpc_v2_client::APIKey::new("API-KEY", "abcdef12345");
 /// println!("{}", api_key.as_header());
@@ -44,12 +45,39 @@ impl APIKey {
     }
 }
 
-/// JSON RPC Request
-/// 
-/// Request object
-/// 
+/// Service address container containing `url` and `endpoint`
+/// `url` is server host in the form of 127.0.0.1:8080
+/// `endpoint` is service endpoint route like /api
+/// So to access service at http://127.0.0.1:8082/api ServiceAddress
+/// needs to be ServiceAddress::new("127.0.0.1:8082", "/api")
+///
 /// # Examples
 /// 
+/// ```
+/// let math_service_address = jsonrpc_v2_client::ServiceAddress::new("127.0.0.1:8082", "/api");
+/// println!("{:?}", math_service_address);
+/// ```
+/// 
+#[derive(Clone, Debug)]
+pub struct ServiceAddress {
+    pub url: String,
+    pub endpoint: String,
+}
+impl ServiceAddress {
+    pub fn new(url: &str, endpoint: &str) -> ServiceAddress {
+        ServiceAddress {
+            url: url.to_string(),
+            endpoint: endpoint.to_string(),
+        }
+    }
+}
+
+/// JSON RPC Request
+///
+/// Request object
+///
+/// # Examples
+///
 /// ``` no_run
 /// let math_service_url = "http://localhost:8082/math-api";
 /// let method = "add";
@@ -79,32 +107,111 @@ impl<T: Serialize> Request<T> {
             id: id,
         }
     }
-    pub fn send(&self, url: &str, api_key: Option<APIKey>) -> std::result::Result<std::string::String, std::io::Error> {
+    pub fn send(
+        &self,
+        service_address: &ServiceAddress,
+        api_key: Option<APIKey>,
+    ) -> std::string::String {
         task::block_on(async {
-            let mut client = TcpStream::connect(url).await.unwrap();
+            let mut client = TcpStream::connect(&service_address.url).await.unwrap();
             let request: String;
+
+            let json = serde_json::to_string_pretty(&self).unwrap();
+            let content_length = json.len();
+
+            let mut buffer = [0u8; 4 * 1024];
+            let mut buffer_size: usize = 0;
 
             match api_key {
                 Some(key_value) => {
                     request = format!(
-                        "POST / HTTP/1.1\r\nContent-Type: application/json\r\nUser-Agent: jsonrpc_v2_client\r\n{}\r\n\n{}",
+                        "POST {} HTTP/1.1\r\n
+                        Content-Type: application/json\r\n
+                        User-Agent: jsonrpc_v2_client\r\n
+                        Accept: application/json\r\n
+                        {}\r\n
+                        Content-Length: {}\r\n\r\n
+                        {}",
+                        service_address.endpoint,
                         key_value.as_header(),
-                        serde_json::to_string(&self).unwrap()
+                        content_length,
+                        json,
                     );
-                },
+
+                    log::trace!(
+                        target: "jsonrpc_v2_client",
+                        "[jsonrpc_v2_client: request as string]\r\n{}",
+                        &request
+                    );
+                }
                 None => {
                     request = format!(
-                        "POST / HTTP/1.1\r\nContent-Type: application/json\r\nUser-Agent: jsonrpc_v2_client\r\n\n{}",
-                        serde_json::to_string(&self).unwrap()
+                        "POST {} HTTP/1.1\r\n\
+                        Content-Type: application/json\r\n\
+                        User-Agent: jsonrpc_v2_client\r\n\
+                        Accept: application/json\r\n\
+                        Content-Length: {}\r\n\r\n\
+                        {}",
+                        service_address.endpoint,
+                        content_length,
+                        json
+                    );
+
+                    log::trace!(
+                        target: "jsonrpc_v2_client",
+                        "[jsonrpc_v2_client: request as string]\r\n{}",
+                        &request
                     );
                 }
             }
-            client.write_all(request.as_bytes()).await?;
 
-            let mut buffer = [0u8; 4 * 1024];
-            let buffer_size = client.read(&mut buffer).await.unwrap();
+            log::trace!(
+                target: "jsonrpc_v2_client",
+                "[jsonrpc_v2_client: sending request]"
+            );
 
-            Ok(String::from_utf8_lossy(&buffer[..buffer_size]).into_owned())
-        })   
+            // send request to the server
+            match client.write_all(request.as_bytes()).await {
+                Ok(_) => {
+                    log::info!(
+                        target: "jsonrpc_v2_client",
+                        "[jsonrpc_v2_client: request successfully sent]"
+                    );
+                },
+                Err(error) => {
+                    log::error!(
+                        target: "jsonrpc_v2_client",
+                        "[jsonrpc_v2_client: error]: {}",
+                        error
+                    );
+                }
+            }
+            
+            log::trace!(
+                target: "jsonrpc_v2_client",
+                "[jsonrpc_v2_client: reading response]"
+            );
+            
+            // read the response
+            match client.read(&mut buffer).await {
+                Ok(size) => {
+                    log::info!(
+                        target: "jsonrpc_v2_client",
+                        "[jsonrpc_v2_client: received response of len = {}]",
+                        &size,
+                    );
+                    buffer_size = size;
+                },
+                Err(error) => {
+                    log::error!(
+                        target: "jsonrpc_v2_client",
+                        "[jsonrpc_v2_client: error]\r\n{}",
+                        error
+                    );
+                }
+            }
+
+            String::from_utf8_lossy(&buffer[..buffer_size]).into_owned()
+        })
     }
 }
