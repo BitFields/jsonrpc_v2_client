@@ -26,3 +26,67 @@ println!("{}", response["result"]);
 println!("{}", response["error"]);
 println!("{}", response["id"]);
 ```
+
+## Logging
+
+log target name is: jsonrpc_v2_client  
+example using log4rs
+
+file: config.yaml  
+
+``` yaml
+# Scan this file for changes every x seconds
+refresh_rate: 30 seconds
+
+appenders:
+  stdout:
+    kind: file
+    path: "log/logs/stdout.log"
+    encoder:
+      pattern: "{d} - {m}{n}"
+
+  jsonrpc_v2_client:
+    kind: file
+    path: "log/logs/jsonrpc_v2_client.log"
+    encoder:
+      pattern: "{d} - {m}{n}"
+
+root:
+  level: info
+  appenders:
+    - stdout
+
+  jsonrpc_v2_client:
+    level: trace
+    appenders:
+      - jsonrpc_v2_client
+    additive: false
+```
+
+log output example:
+
+``` log
+2021-12-15T14:58:35.293410700+01:00 - [jsonrpc_v2_client: request as string]
+POST /api HTTP/1.1
+Content-Type: application/json
+User-Agent: jsonrpc_v2_client
+Accept: application/json
+X-API-KEY: 1q2w3e4r5t
+Content-Length: 100
+
+{
+  "jsonrpc": "2.0",
+  "method": "mul",
+  "params": [
+    10.3,
+    10.1,
+    12.2
+  ],
+  "id": 0
+}
+2021-12-15T14:58:35.294005600+01:00 - [jsonrpc_v2_client: sending request]
+2021-12-15T14:58:35.294470100+01:00 - [jsonrpc_v2_client: request successfully sent]
+2021-12-15T14:58:35.294679+01:00 - [jsonrpc_v2_client: reading response]
+2021-12-15T14:58:35.297373900+01:00 - [jsonrpc_v2_client: received response of len = 183]
+2021-12-15T14:58:35.300850900+01:00 - [jsonrpc_v2_client: request as string]
+```
