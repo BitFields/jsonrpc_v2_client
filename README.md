@@ -12,7 +12,7 @@
 let service_address = jsonrpc_v2_client::ServiceAddress::new("127.0.0.1:8082", "/api");
 let method = "add";
 let params = jsonrpc_v2_client::Params([10.5, 20.5]);
-let id = 0;
+let id = "0";
 let request = jsonrpc_v2_client::Request::new(method, params, id);
 // Without API KEY
 let response = request.send(&service_address, None);

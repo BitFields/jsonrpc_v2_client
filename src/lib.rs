@@ -92,7 +92,7 @@ impl ServiceAddress {
 /// let service_address = jsonrpc_v2_client::ServiceAddress::new("127.0.0.1:8082", "/api");
 /// let method = "add";
 /// let params = jsonrpc_v2_client::Params([10.5, 20.5]);
-/// let id = 0;
+/// let id = "0";
 /// let request = jsonrpc_v2_client::Request::new(method, params, id);
 /// let response = request.send(&service_address, None);
 /// println!("{}", response);
@@ -110,17 +110,17 @@ pub struct Request<T: Serialize> {
     jsonrpc: String,
     pub method: String,
     pub params: Params<T>,
-    pub id: u64,
+    pub id: String,
 }
 
 impl<T: Serialize> Request<T> {
 
-    pub fn new(method: &str, params: Params<T>, id: u64) -> Request<T> {
+    pub fn new(method: &str, params: Params<T>, id: &str) -> Request<T> {
         Request {
             jsonrpc: JSONRPC_VERSION.to_string(),
             method: method.to_string(),
             params: params,
-            id: id,
+            id: id.to_string(),
         }
     }
 
