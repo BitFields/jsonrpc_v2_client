@@ -3,10 +3,14 @@ use async_std::prelude::*;
 use async_std::task;
 use serde::Serialize;
 
-
+/// JSONRPC version 2.0 compatible client library
+/// [JSONRPC v2.0 specification][1]
+/// 
+/// [1]: https://www.jsonrpc.org/specification
 
 /// version of protocol
 pub const JSONRPC_VERSION: &str = "2.0";
+
 
 /// Request parameters
 ///
@@ -35,7 +39,9 @@ pub struct Params<T: Serialize>(pub T);
 /// ```
 #[derive(Debug, Serialize)]
 pub struct APIKey(String, String);
+
 impl APIKey {
+
     pub fn new(key: &str, value: &str) -> APIKey {
         APIKey(key.to_string(), value.to_string())
     }
@@ -43,6 +49,7 @@ impl APIKey {
     pub fn as_header(&self) -> String {
         format!("{}: {}", self.0, self.1)
     }
+
 }
 
 /// Service address container containing `url` and `endpoint`
@@ -63,13 +70,18 @@ pub struct ServiceAddress {
     pub url: String,
     pub endpoint: String,
 }
+
 impl ServiceAddress {
+
     pub fn new(url: &str, endpoint: &str) -> ServiceAddress {
+
         ServiceAddress {
             url: url.to_string(),
             endpoint: endpoint.to_string(),
         }
+
     }
+
 }
 
 /// JSON RPC Request
@@ -79,17 +91,21 @@ impl ServiceAddress {
 /// # Examples
 ///
 /// ``` no_run
-/// let math_service_url = "http://localhost:8082/math-api";
+/// let service_address = jsonrpc_v2_client::ServiceAddress::new("127.0.0.1:8082", "/api");
 /// let method = "add";
 /// let params = jsonrpc_v2_client::Params([10.5, 20.5]);
 /// let id = 0;
 /// let request = jsonrpc_v2_client::Request::new(method, params, id);
-/// let response = request.send(math_service_url, None).unwrap();
+/// let response = request.send(&service_address, None);
 /// println!("{}", response);
 /// // Or with API KEY
 /// let api_key = jsonrpc_v2_client::APIKey::new("API-KEY", "abcdef123456");
-/// let response = request.send(math_service_url, Some(api_key)).unwrap();
+/// let response = request.send(&service_address, Some(&api_key));
 /// println!("{}", response);
+/// // Access JSON field
+/// println!("{}", response["result"]);
+/// println!("{}", response["error"]);
+/// println!("{}", response["id"]);
 /// ```
 #[derive(Clone, Debug, Serialize)]
 pub struct Request<T: Serialize> {
@@ -98,7 +114,9 @@ pub struct Request<T: Serialize> {
     pub params: Params<T>,
     pub id: u64,
 }
+
 impl<T: Serialize> Request<T> {
+
     pub fn new(method: &str, params: Params<T>, id: u64) -> Request<T> {
         Request {
             jsonrpc: JSONRPC_VERSION.to_string(),
@@ -107,11 +125,13 @@ impl<T: Serialize> Request<T> {
             id: id,
         }
     }
+
     pub fn send(
         &self,
         service_address: &ServiceAddress,
-        api_key: Option<APIKey>,
-    ) -> std::string::String {
+        api_key: Option<&APIKey>,
+    ) -> serde_json::Value {
+
         task::block_on(async {
             let mut client = TcpStream::connect(&service_address.url).await.unwrap();
             let request: String;
@@ -123,14 +143,16 @@ impl<T: Serialize> Request<T> {
             let mut buffer_size: usize = 0;
 
             match api_key {
+
                 Some(key_value) => {
+
                     request = format!(
-                        "POST {} HTTP/1.1\r\n
-                        Content-Type: application/json\r\n
-                        User-Agent: jsonrpc_v2_client\r\n
-                        Accept: application/json\r\n
-                        {}\r\n
-                        Content-Length: {}\r\n\r\n
+                        "POST {} HTTP/1.1\r\n\
+                        Content-Type: application/json\r\n\
+                        User-Agent: jsonrpc_v2_client\r\n\
+                        Accept: application/json\r\n\
+                        {}\r\n\
+                        Content-Length: {}\r\n\r\n\
                         {}",
                         service_address.endpoint,
                         key_value.as_header(),
@@ -143,7 +165,7 @@ impl<T: Serialize> Request<T> {
                         "[jsonrpc_v2_client: request as string]\r\n{}",
                         &request
                     );
-                }
+                },
                 None => {
                     request = format!(
                         "POST {} HTTP/1.1\r\n\
@@ -172,6 +194,7 @@ impl<T: Serialize> Request<T> {
 
             // send request to the server
             match client.write_all(request.as_bytes()).await {
+
                 Ok(_) => {
                     log::info!(
                         target: "jsonrpc_v2_client",
@@ -211,7 +234,15 @@ impl<T: Serialize> Request<T> {
                 }
             }
 
-            String::from_utf8_lossy(&buffer[..buffer_size]).into_owned()
+            serde_json::from_str(
+                String::from_utf8_lossy(
+                    &buffer[..buffer_size]
+                )
+                .split(
+                    "\r\n\r\n"
+                ).collect::<Vec<&str>>()[1].trim()
+            ).unwrap()
+            
         })
     }
 }
