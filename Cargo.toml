@@ -3,6 +3,11 @@ name = "jsonrpc_v2_client"
 version = "0.1.0"
 authors = ["jhaboic <josiphaboic@gmail.com>"]
 edition = "2018"
+repository = "https://github.com/BitFields/jsonrpc_v2_client"
+keywords = ["jsonrpc", "client", "rpc", "json"]
+description = "JSONRPC Client based on async-std"
+license = "Apache-2.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

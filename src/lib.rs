@@ -52,11 +52,9 @@ impl APIKey {
 
 }
 
-/// Service address container containing `url` and `endpoint`
-/// `url` is server host in the form of 127.0.0.1:8080
+/// Service address container containing `url` and `endpoint` fields  
+/// `url` is server host in the form of 127.0.0.1:8080  
 /// `endpoint` is service endpoint route like /api
-/// So to access service at http://127.0.0.1:8082/api ServiceAddress
-/// needs to be ServiceAddress::new("127.0.0.1:8082", "/api")
 ///
 /// # Examples
 /// 
