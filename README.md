@@ -82,7 +82,7 @@ Content-Length: 100
     10.1,
     12.2
   ],
-  "id": 0
+  "id": "0"
 }
 2021-12-15T14:58:35.294005600+01:00 - [jsonrpc_v2_client: sending request]
 2021-12-15T14:58:35.294470100+01:00 - [jsonrpc_v2_client: request successfully sent]
