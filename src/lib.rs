@@ -134,7 +134,7 @@ impl<T: Serialize> Request<T> {
             let mut client = TcpStream::connect(&service_address.url).await.unwrap();
             let request: String;
 
-            let json = serde_json::to_owned_pretty(&self).unwrap();
+            let json = serde_json::to_string_pretty(&self).unwrap();
             let content_length = json.len();
 
             let mut buffer = [0u8; 4 * 1024];
