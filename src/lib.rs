@@ -43,7 +43,7 @@ pub struct APIKey(String, String);
 impl APIKey {
 
     pub fn new(key: &str, value: &str) -> APIKey {
-        APIKey(key.to_string(), value.to_string())
+        APIKey(key.to_owned(), value.to_owned())
     }
 
     pub fn as_header(&self) -> String {
@@ -74,8 +74,8 @@ impl ServiceAddress {
     pub fn new(url: &str, endpoint: &str) -> ServiceAddress {
 
         ServiceAddress {
-            url: url.to_string(),
-            endpoint: endpoint.to_string(),
+            url: url.to_owned(),
+            endpoint: endpoint.to_owned(),
         }
 
     }
@@ -117,10 +117,10 @@ impl<T: Serialize> Request<T> {
 
     pub fn new(method: &str, params: Params<T>, id: &str) -> Request<T> {
         Request {
-            jsonrpc: JSONRPC_VERSION.to_string(),
-            method: method.to_string(),
+            jsonrpc: JSONRPC_VERSION.to_owned(),
+            method: method.to_owned(),
             params: params,
-            id: id.to_string(),
+            id: id.to_owned(),
         }
     }
 
@@ -134,7 +134,7 @@ impl<T: Serialize> Request<T> {
             let mut client = TcpStream::connect(&service_address.url).await.unwrap();
             let request: String;
 
-            let json = serde_json::to_string_pretty(&self).unwrap();
+            let json = serde_json::to_owned_pretty(&self).unwrap();
             let content_length = json.len();
 
             let mut buffer = [0u8; 4 * 1024];
