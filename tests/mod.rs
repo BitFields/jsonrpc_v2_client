@@ -52,7 +52,7 @@ mod tests {
         use serde_json::Value::Null;
 
         let service_address = ServiceAddress::new("127.0.0.1:8082", "/api");
-        let req = Request::new("mul", Params([2.5, 3.5]), 0);
+        let req = Request::new("mul", Params([2.5, 3.5]), "0");
 
         let response = req.send(&service_address, None);
 
@@ -71,7 +71,7 @@ mod tests {
 
         let service_address = ServiceAddress::new("127.0.0.1:8082", "/api");
         // error produced here, this method takes only 2 params
-        let req = Request::new("mul", Params([2.5, 3.5, 3.0]), 0);
+        let req = Request::new("mul", Params([2.5, 3.5, 3.0]), "0");
 
         let response = req.send(&service_address, None);
 
