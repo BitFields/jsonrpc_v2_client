@@ -34,13 +34,13 @@ mod tests {
 
         let api_key = APIKey::new("X-API-KEY", "abcdef12345678");
         let service_address = ServiceAddress::new("127.0.0.1:8082", "/api");
-        let req = Request::new("mul", Params([2.5, 3.5]), 0);
+        let req = Request::new("mul", Params([2.5, 3.5]), "0");
 
         let response = req.send(&service_address, Some(&api_key));
 
         assert_eq!(response["jsonrpc"], "2.0");
         assert_eq!(response["result"], 8.75);
-        assert_eq!(response["id"], 0);
+        assert_eq!(response["id"], "0");
         assert_eq!(response["error"], Null);
     }
 
@@ -58,7 +58,7 @@ mod tests {
 
         assert_eq!(response["jsonrpc"], "2.0");
         assert_eq!(response["result"], 8.75);
-        assert_eq!(response["id"], 0);
+        assert_eq!(response["id"], "0");
         assert_eq!(response["error"], Null);
     }
 
@@ -77,7 +77,7 @@ mod tests {
 
         assert_eq!(response["jsonrpc"], "2.0");
         assert_eq!(response["result"], Null);
-        assert_eq!(response["id"], 0);
+        assert_eq!(response["id"], "0");
         assert_eq!(response["error"]["code"], -32602);
         assert_eq!(response["error"]["message"], "Invalid params");
     }
