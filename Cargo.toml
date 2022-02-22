@@ -2,7 +2,7 @@
 name = "jsonrpc_v2_client"
 version = "0.2.1"
 authors = ["jhaboic <josiphaboic@gmail.com>"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/BitFields/jsonrpc_v2_client"
 keywords = ["jsonrpc", "client", "rpc", "json"]
 description = "JSONRPC Client based on async-std"
